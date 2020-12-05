@@ -151,7 +151,45 @@ classdef Drone < handle
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %MODEL DESIGN PARAMETERS
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%       
+        g = 9.81; %acceleration of gravity
+        m = 0.5; %mass
+        L = 0.25;%arm length
+        k = 3e-6; %thrust coefficient 
+        b = 1e-7; 
+        I = diag([5e-3, 5e-3, 10e-3]); %moment of inertia (I_x, I_y, I_z)
+        kd = 0.25;%drag coeffiecent 
+         
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %FORCES AND TORQUE FUNCTIONS
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%       
+        %Computing thrust given inputs and thrust coefficint
+        function T = thrust(inputs, k)
+            T = [0;0;sum*inputs];
+        end
         
+        %Computing torque given inpputs, length, drag coeff, thrust coeff
+        function tau = torques(inputs, L, b, k)
+            tau = [
+                L * k * (inputs(1) - inputs(3))
+                L * k * (inputs(2) - inputs(4))
+                b * (inputs(1) - inputs(2) + inputs(3) - inputs(4))
+                ];
+        end
+        
+        function a = acceleration(inputs, angles, xdot, m, g, k, kd)
+            gravity = [0; 0; -g];
+            R = rotation(angles);
+            T = R * thrust(inputs, k);
+            Fd = -kd * xdot;
+            a = gravity + 1 / m * T + Fd;
+        end
+        
+        function omegadot = angular_acceleration(inputs, omega, I, L, b, k)
+            tau = torques(inputs, L, b, k);
+            omegaddot = inv(I) * (tau - cross(omega, I * omega));
+        end
+        
+
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %PID CONTROLLER FUNCTION
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -201,13 +239,7 @@ classdef Drone < handle
             inputs(3) = total/4 -(-2 * b * e1 * Ix + e3 * Iz * k * L)/(4 * b * k * L);
             inputs(4) = total/4 + e3 * Iz/(4 * b) + (e2 * Iy)/(2 * k * L);
         end
-        
-        
-
-        
-        
-        
-        
+       
         
         function update(obj)
             %update simulation time
