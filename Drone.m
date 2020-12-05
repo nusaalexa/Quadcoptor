@@ -175,15 +175,15 @@ classdef Drone < handle
                 b * (inputs(1) - inputs(2) + inputs(3) - inputs(4))
                 ];
         end
-        
+        %Computing linear motion
         function a = acceleration(inputs, angles, xdot, m, g, k, kd)
             gravity = [0; 0; -g];
-            R = rotation(angles);
+            R = rotation(angles);%Body frame
             T = R * thrust(inputs, k);
-            Fd = -kd * xdot;
+            Fd = -kd * xdot;%drag force
             a = gravity + 1 / m * T + Fd;
         end
-        
+        %he body frame rotational equations of motion
         function omegadot = angular_acceleration(inputs, omega, I, L, b, k)
             tau = torques(inputs, L, b, k);
             omegaddot = inv(I) * (tau - cross(omega, I * omega));
